@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sotto l'Orizzonte - Esperienza Interattiva</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        #narration-side { flex: 1; padding: 50px; display: flex; flex-direction: column; justify-content: center; border-right: 2px solid #333; background: linear-gradient(135deg, #0f0f0f 0%, #000 100%); z-index: 2; }
+        #image-side { flex: 0 0 45%; background-color: #0a0a0a; background-position: center center; background-repeat: no-repeat; background-size: cover; border-left: 4px solid #bc0000; transition: background-image 0.8s ease-in-out; }
+        
+        /* Modifica colore Titolo e stile Logo */
+        #logo-container { margin-bottom: 10px; }
+        #logo-container img { max-width: 150px; height: auto; }
+        h1 { color: #323232; text-transform: uppercase; letter-spacing: 4px; font-size: 1.6rem; margin-bottom: 30px; margin-top: 0; }
+        
+        #text { font-size: 1.15rem; line-height: 1.7; margin-bottom: 35px; text-align: justify; color: #d0d0d0; }
+        .options-container { display: flex; flex-direction: column; gap: 12px; }
+        button { background: #111; color: #eee; border: 1px solid #444; padding: 16px; cursor: pointer; text-align: left; font-size: 0.95rem; transition: 0.3s; }
+        button:hover { border-color: #bc0000; background: #1a0000; color: #fff; padding-left: 25px; }
+        .buy-btn { background: #bc0000 !important; color: #fff !important; font-weight: bold; text-align: center !important; border: none !important; }
+        .buy-btn:hover { background: #fff !important; color: #bc0000 !important; }
+        @media (max-width: 800px) { body { flex-direction: column; overflow-y: auto; } #image-side { flex: 0 0 300px; order: -1; border-left: none; border-bottom: 4px solid #bc0000; } #narration-side { padding: 25px; } }
+    </style>
+</head>
+<body onclick="startMusic()">
+
+<audio id="bgm" loop autoplay><source src="musica.mp3" type="audio/mpeg"></audio>
+
+<div id="narration-side">
+    <div id="logo-container">
+        <img src="logo.jpg" alt="SAIT Logo">
+    </div>
+    <h1 id="title">Sotto l'Orizzonte</h1>
+    <div id="text">...</div>
+    <div id="options" class="options-container"></div>
+</div>
+<div id="image-side"></div>
+
+<script>
+const story = {
+    1: { text: "Hai appena reciso la giugulare del tuo aguzzino. Il sangue ti cola sulle mani, ma non provi rimorso. Sei debole, la testa gira. La grotta sembra allungarsi nell'oscurità. Senti l'odore dell'aria arrivare da sinistra.", image: "scena1.jpg", options: [
+        { text: "Accendi un fiammifero", next: "morte", reason: "Il riverbero della fiamma attira i guardiani nel tunnel. Ti hanno individuato e giustiziato sul posto." },
+        { text: "Segui l'odore dell'aria verso sinistra", next: 2 },
+        { text: "Resta immobile per riprendere i sensi", next: "retry", reason: "Sarebbe una scelta saggia in altre condizioni, ma il tempo stringe. Non fermarti ora." }
+    ]},
+    2: { text: "Raggiungi l'imboccatura. La luce sulla neve è accecante. Una giovane sentinella di tredici anni ti dà le spalle. È l'unica barriera tra te e la libertà.", image: "scena1.jpg", options: [
+        { text: "Attacca con precisione alla nuca", next: 3 },
+        { text: "Tenta di aggirarlo silenziosamente", next: "morte", reason: "Il ghiaccio scricchiola sotto i tuoi stivali. Il ragazzo si gira e scarica il caricatore. Sei finito." },
+        { text: "Prova a parlargli con calma", next: "retry", reason: "L'umanità è un lusso che qui non puoi permetterti. Lui ha paura quanto te, e la paura preme il grilletto." }
+    ]},
+    3: { text: "Sei in volo sopra i cieli afghani dopo mesi di prigionia. Finalmente i piedi a terra. Dove decidi di andare?", image: "scena2.jpg", options: [
+        { text: "In un ospedale civile", next: "retry", reason: "Un agente della SAIT non lascia tracce negli archivi pubblici. Scegli una via più sicura." },
+        { text: "A casa tua", next: "morte", reason: "Un errore da dilettante. Le telecamere hanno già inviato la tua posizione ai sicari." },
+        { text: "Alla base operativa della tua Agenzia", next: 4 }
+    ]},
+    4: { text: "La prigionia ti ha annebbiato, ma cerchi di ricordare. Chi è l'unico a cui la SAIT deve rispondere?", image: "scena2.jpg", options: [
+        { text: "Al Direttore della CIA", next: "retry", reason: "Logico, ma sbagliato. La SAIT opera oltre i confini della burocrazia standard." },
+        { text: "Direttamente al Presidente degli Stati Uniti", next: 5 },
+        { text: "Al comitato di sicurezza ONU", next: "morte", reason: "Ti considerano una falla nella sicurezza e ti neutralizzano immediatamente." }
+    ]},
+    5: { text: "Cambio di prospettiva, non sei più lo stesso uomo. Sei un omonimo intrappolato in un destino speculare. Davanti a te, una bellissima fioraia sta sitemando un mazzo di fiori. Cosa fai?", image: "scena3.jpg", options: [
+        { text: "La fissi intensamente senza agire", next: "morte", reason: "L'apatia ti uccide più dei proiettili. La tua storia finisce nel dimenticatoio." },
+        { text: "Compri un mazzo di fiori, glielo regali imbarazzato e fuggi", next: 6 },
+        { text: "Chiedi indicazioni per un luogo vicino", next: "retry", reason: "Troppo banale per un uomo come te. Il destino richiede più coraggio." }
+    ]},
+    6: { text: "Quella fioraia è diventata la tua ancora, l'unica luce in una vita che portava un nome non tuo. Ma la normalità è un castello di sabbia ed una mattina ti lascia. Cosa è successo davvero?", image: "scena3.jpg", options: [
+        { text: "Suo padre è morto", next: 7 },
+        { text: "Si è annoiata della tua presenza", next: "retry", reason: "Forse, ma c'è un motivo più oscuro dietro questo addio. Cerca meglio." },
+        { text: "Ha scoperto frammenti del tuo passato", next: "morte", reason: "La verità è un veleno. Non ha retto il colpo e ti ha denunciato." }
+    ]},
+    7: { text: "Le informazioni che hai raccolto scottano più del piombo. Sei penetrato nelle crepe del sistema, ma ora sei un uomo segnato: la tua copertura vacilla e ogni secondo che passi in silenzio è un secondo regalato al nemico. Non puoi usare telefoni, non puoi usare la rete. Devi far uscire questi dati prima che ti trovino. Come scegli di comunicare con l'Agenzia?", image: "scena4.jpg", options: [
+        { text: "Usi una mail criptata usa e getta", next: "retry", reason: "Tecnicamente valido, ma i filtri nemici sono avanzati. Serve un metodo analogico." },
+        { text: "Pubblico un annuncio nei cuori solitari", next: 8 },
+        { text: "Lascio un segnale di gesso sul ponte", next: "morte", reason: "Ti hanno visto e prelevato prima del tramonto." }
+    ]},
+    8: { text: "i trovi nelle sale silenziose del Museo Reina Sofia. Davanti a te si staglia 'L’uomo invisibile' di Salvador Dalí. Le forme si confondono, appaiono e scompaiono a seconda di come le guardi. In quell'opera vedi lo specchio della tua esistenza: un uomo fatto di vuoti e frammenti, che esiste solo finché nessuno riesce a metterlo a fuoco. Senti il peso del tuo segreto mentre un passo solitario rimbomba dietro di te. Come ti senti in questo istante?", image: "scena4.jpg", options: [
+        { text: "Schiacciato dal peso della storia", next: "retry", reason: "Un'osservazione profonda, ma un agente deve guardarsi le spalle." },
+        { text: "Invisibile come lui, ma identificabile", next: 9 },
+        { text: "Indifferente a tutto ciò", next: "morte", reason: "Non hai visto l'uomo con la pistola dietro la colonna." }
+    ]},
+    9: { text: "Le luci di Times Square sono un incubo al neon che non offre alcun riparo. Sei a New York, nel cuore pulsante del mondo, ma non ti sei mai sentito così solo. In questa giungla di vetro e cemento, sai che non puoi fidarti di nessuno che si trovi nel raggio di mille miglia. Chi decidi di chiamare?", image: "scena5.jpg", options: [
+        { text: "Un amico a Venezia", next: 10 },
+        { text: "Il distretto di Polizia locale", next: "morte", reason: "Finiresti in un carcere di massima sicurezza per sempre." },
+        { text: "Il tuo vecchio addestratore", next: "retry", reason: "Lui non può più aiutarti. C'è qualcun altro che ti aspetta." }
+    ]},
+    10: { text: "L'aria nel seminterrato di Belgrado è spessa, satura di fumo e del battito ossessivo della techno che ti vibra nei polmoni. Attorno a te, tavoli carichi di hardware balistico e polvere bianca raccontano una storia di violenza imminente. Il tuo compagno di viaggio ha appena perso il controllo, spaccando il naso a una guardia con un colpo secco e brutale. Ora regna un silenzio elettrico, interrotto solo dai bassi, mentre senti il freddo metallo di una canna di pistola premuto proprio tra i tuoi occhi. Cosa fai?", image: "scena5.jpg", options: [
+        { text: "Tenti una mossa di disarmo rapido", next: "retry", reason: "Saresti morto prima di toccare la sua arma. Mantieni il sangue freddo." },
+        { text: "Urli il nome del tuo contatto", next: "morte", reason: "Hai rotto la regola del silenzio. La guardia preme il grilletto." },
+        { text: "Tremi ma reggi lo sguardo", next: 11 }
+    ]},
+    11: { text: "Baghdad. L'aria è un muro di calore e polvere. Ti trovi nella tua stanza all'Hotel Palestine quando il mondo sembra squarciarsi: un'esplosione violentissima! Le urla in strada sono coperte dal ronzio assordante nelle tue orecchie. In questo inferno di fumo e macerie, qual è la tua prima mossa?", image: "scena6.jpg", options: [
+        { text: "Richiudo gli occhi, mi ci devo abituare", next: 12 },
+        { text: "Corro alla finestra", next: "morte", reason: "L'onda d'urto della seconda esplosione ti investe in pieno." },
+        { text: "Cerchi una via di fuga rapida", next: "retry", reason: "In guerra, a volte la mossa migliore è non muoversi. Rifletti." }
+    ]},
+    12: { text: "Sei a Baghdad e hai appena dato un'ordine al capo dei militari USA sul posto. Lui non vuole obbedire ma tu come imponi la tua autorità sapendo che potrebbe mandarti alla corte marziale?", image: "scena6.jpg", options: [
+        { text: "Dici che è sicurezza nazionale", next: "retry", reason: "Frase fatta che non incanta nessuno. Serve la verità suprema." },
+        { text: "Minacci di usare la forza", next: "morte", reason: "L'arroganza ti ha tradito. Ti hanno ammanettato e rinchiuso." },
+        { text: "Ci sono solo due figure a cui devo rispondere, una vive al 1600 di Pennsylvania Avenue e l’altra lo scopriremo dopo morti", next: "vittoria" }
+    ]},
+    "morte": { image: "copertina.jpg", options: [{ text: "LA TUA CORSA FINISCE QUI. RICOMINCIA.", next: 1 }] },
+    "retry": { image: "copertina.jpg", options: [{ text: "NON È LA SCELTA GIUSTA. RITENTA.", back: true }] },
+    "vittoria": { text: "Complimenti, saresti un ottimo protagonista per un techno-thriller ma sono sicuro che ora avrai mille domande in testa! Corri a comprare Sotto l'orizzonte e scopri come tutti questi elementi creano una trama dirompente.", image: "scena6.jpg", options: [
+        { text: "A - Acquista su Amazon", url: "https://www.amazon.it/Sotto-lorizzonte-PAV-Edizioni-edito/dp/B0BXNF2KPB", isBuy: true },
+        { text: "B - Acquista sul sito dell'editore", url: "https://pavedizioni.it/prodotto/sotto-lorizzonte", isBuy: true },
+        { text: "C - Andiamo sei un'agente segreto, alza quelle chiappe e corri in libreria!", next: "exit", isBuy: true }
+    ]}
+};
+
+let lastQuestionId = 1;
+
+function startMusic() {
+    const audio = document.getElementById('bgm');
+    if (audio.paused) audio.play();
+}
+
+function renderNode(nodeId, reason = "") {
+    if (nodeId === 'exit') { window.location.href = "https://www.robertobernardis.com/"; return; }
+    
+    const node = story[nodeId];
+    startMusic();
+
+    if (nodeId !== "morte" && nodeId !== "retry" && nodeId !== "vittoria") {
+        lastQuestionId = nodeId;
+    }
+
+    document.getElementById('text').innerText = (nodeId === "morte" || nodeId === "retry") ? reason : node.text;
+    document.getElementById('image-side').style.backgroundImage = `url('${node.image}')`;
+    
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    
+    node.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt.text;
+        if(opt.isBuy) btn.className = "buy-btn";
+        
+        btn.onclick = () => {
+            if (opt.url) window.open(opt.url, '_blank');
+            else if (opt.back) renderNode(lastQuestionId);
+            else renderNode(opt.next, opt.reason);
+        };
+        optionsDiv.appendChild(btn);
+    });
+}
+
+window.onload = () => {
+    renderNode(1);
+    startMusic();
+};
+</script>
+</body>
+</html>
